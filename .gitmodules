@@ -1,0 +1,3 @@
+[submodule "external/packmol"]
+	path = external/packmol
+	url = https://github.com/Roy-Kid/packmol.git
