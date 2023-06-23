@@ -31,34 +31,77 @@ cmake_print_variables(Python_NumPy_INCLUDE_DIRS)
 
 # Common variables
 set(f2py_module_name "packmol")
-# Glob all f90 file under external/packmol/src
 set(packmol_src_path "${CMAKE_SOURCE_DIR}/external/packmol/src")
-file(GLOB_RECURSE fortran_src_files "${CMAKE_SOURCE_DIR}/external/packmol/src/*.f90")
+set(patch_src_path "${CMAKE_SOURCE_DIR}/external")
+# Glob all f90 file under external/packmol/src
+# file(GLOB_RECURSE fortran_src_files "${CMAKE_SOURCE_DIR}/external/packmol/src/*.f90")
+
+set(fortran_src_files
+    ${packmol_src_path}/sizes.f90
+    # ${packmol_src_path}/ahestetic.f90
+    # ${packmol_src_path}/cenmass.f90
+    # ${packmol_src_path}/checkpoint.f90
+    # ${packmol_src_path}/comparegrad.f90
+    # ${packmol_src_path}/comprest.f90
+    ${packmol_src_path}/compute_data.f90
+    # ${packmol_src_path}/computef.f90
+    # ${packmol_src_path}/computeg.f90
+    # ${packmol_src_path}/exit_codes.f90
+    ${packmol_src_path}/flashmod.f90
+    # ${packmol_src_path}/fparc.f90
+    # ${packmol_src_path}/gencan_ieee_signal_routines.f90
+    # ${packmol_src_path}/gencan.f
+    # # ${packmol_src_path}/getinp.f90
+    # ${packmol_src_path}/gparc.f90
+    # ${packmol_src_path}/gwalls.f90
+    # ${packmol_src_path}/heuristics.f90
+    # ${packmol_src_path}/initial.f90
+    ${packmol_src_path}/input.f90
+    # ${packmol_src_path}/jacobi.f90
+    # ${packmol_src_path}/output.f90
+    # ${packmol_src_path}/pgencan.f90
+    # ${packmol_src_path}/polartocart.f90
+    # ${packmol_src_path}/random.f90
+    # ${packmol_src_path}/resetboxes.f90
+    # ${packmol_src_path}/setibox.f90
+    # ${packmol_src_path}/setijk.f90
+    # ${packmol_src_path}/setsizes.f90
+    # ${packmol_src_path}/strlength.f90
+    # ${packmol_src_path}/swaptypemod.f90
+    # ${packmol_src_path}/title.f90
+    # ${packmol_src_path}/tobar.f90
+    ${packmol_src_path}/usegencan.f90
+    # ${packmol_src_path}/writesuccess.f90
+    ${packmol_src_path}/flashsort.f90
+
+    ${patch_src_path}/set_params.f90
+)
+
 set(f2py_module_c "${f2py_module_name}module.c")
 
 # Generate sources
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c}
+    COMMAND ${Python_EXECUTABLE} -m "numpy.f2py"
+    -m ${f2py_module_name}
+    ${fortran_src_files}
+    --lower
+    DEPENDS ${fortran_src_files}
+    )
+    
 add_custom_target(
     packmol_lib
     DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c}"
 )
 
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c}
-    COMMAND ${Python_EXECUTABLE} -m "numpy.f2py"
-        ${fortran_src_files}
-        -m ${f2py_module_name}
-        --lower
-    DEPENDS ${fortran_src_files}
-)
-
 # Set up target
-python_add_library(packmol_python MODULE WITH_SOABI
-    "${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c}" # Generated
-    "${F2PY_INCLUDE_DIR}/fortranobject.c" # From Numpy
+python_add_library(${f2py_module_name} MODULE WITH_SOABI
+    ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c} # Generated
+    ${F2PY_INCLUDE_DIR}/fortranobject.c # From Numpy
     ${fortran_src_files} # From Packmol
 )
 
 # Depend on sources
-target_link_libraries(packmol_python PRIVATE Python::NumPy)
-add_dependencies(packmol_python packmol_lib)
-target_include_directories(packmol_python PRIVATE "${F2PY_INCLUDE_DIR}")
+target_link_libraries(${f2py_module_name} PRIVATE Python::NumPy)
+add_dependencies(${f2py_module_name} packmol_lib)
+target_include_directories(${f2py_module_name} PRIVATE "${F2PY_INCLUDE_DIR}")
